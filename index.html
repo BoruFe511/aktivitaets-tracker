@@ -22,48 +22,42 @@
       --text2: rgba(240,238,252,0.55);
       --text3: rgba(240,238,252,0.3);
       --studium:  #7f6ff5;
-      --studium-bg: rgba(127,111,245,0.15);
       --ehrenamt: #34d399;
-      --ehrenamt-bg: rgba(52,211,153,0.15);
       --sport:    #fb923c;
-      --sport-bg: rgba(251,146,60,0.15);
       --haushalt: #94a3b8;
-      --haushalt-bg: rgba(148,163,184,0.15);
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
-
     .app { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
 
-    /* Header */
     .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; }
     .logo { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
     .week-nav { display: flex; align-items: center; gap: 8px; }
     .nav-btn { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; color: var(--text2); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: background 0.15s, color 0.15s; }
     .nav-btn:hover { background: var(--surface2); color: var(--text); }
     .week-str { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; min-width: 130px; text-align: center; }
 
-    /* Summary strip */
+    /* Sync indicator */
+    .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); transition: background 0.3s; flex-shrink: 0; }
+    .sync-dot.syncing { background: #fb923c; animation: pulse 0.8s infinite; }
+    .sync-dot.ok { background: #34d399; }
+    .sync-dot.err { background: #f87171; }
+    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+
     .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.5rem; }
     .sum-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 10px 10px 8px; }
     .sum-dot { width: 6px; height: 6px; border-radius: 50%; margin-bottom: 6px; }
     .sum-val { font-size: 22px; font-family: 'DM Mono', monospace; font-weight: 500; line-height: 1; }
     .sum-lbl { font-size: 10px; color: var(--text3); margin-top: 3px; letter-spacing: 0.04em; text-transform: uppercase; }
 
-    /* Day columns */
     .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 1rem; }
     .day-col { display: flex; flex-direction: column; gap: 4px; }
     .day-hdr { text-align: center; font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; padding-bottom: 4px; }
     .day-hdr.today { color: var(--text); }
     .day-date { font-size: 9px; color: var(--text3); display: block; }
     .day-hdr.today .day-date { color: var(--text2); }
-
-    /* Category sections per day */
     .cat-section { display: flex; flex-direction: column; gap: 2px; }
-
-    /* Boxes */
-    .boxes { display: flex; flex-direction: column; gap: 2px; }
-    .box-row { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; }
     .box {
       width: 18px; height: 18px; border-radius: 3px;
       border: 0.5px solid var(--border2);
@@ -73,36 +67,33 @@
       flex-shrink: 0;
     }
     .box:active { transform: scale(0.88); }
-
-    /* Mobile: wider boxes */
-    @media (max-width: 400px) {
-      .box { width: 14px; height: 14px; }
-    }
-
+    @media (max-width: 400px) { .box { width: 14px; height: 14px; } }
     .cat-divider { height: 4px; }
 
-    /* Legend */
     .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem; }
     .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
     .leg-dot { width: 8px; height: 8px; border-radius: 2px; }
 
-    /* Total bar */
     .total-bar { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
     .total-lbl { font-size: 12px; color: var(--text2); }
     .total-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
-
-    /* Today highlight column bg */
     .day-col.today { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0 2px; margin: 0 -2px; }
+
+    /* Sync status bar */
+    .sync-bar { font-size: 11px; color: var(--text3); text-align: right; margin-top: 10px; font-family: 'DM Mono', monospace; min-height: 16px; }
   </style>
 </head>
 <body>
 <div class="app">
   <div class="header">
     <div class="logo">Aktivität</div>
-    <div class="week-nav">
-      <button class="nav-btn" id="prev">&#8592;</button>
-      <div class="week-str" id="week-str"></div>
-      <button class="nav-btn" id="next">&#8594;</button>
+    <div class="header-right">
+      <div class="sync-dot" id="sync-dot" title="Sync-Status"></div>
+      <div class="week-nav">
+        <button class="nav-btn" id="prev">&#8592;</button>
+        <div class="week-str" id="week-str"></div>
+        <button class="nav-btn" id="next">&#8594;</button>
+      </div>
     </div>
   </div>
 
@@ -121,6 +112,7 @@
     <span class="total-lbl">Woche gesamt</span>
     <span class="total-val" id="total-val"></span>
   </div>
+  <div class="sync-bar" id="sync-bar"></div>
 </div>
 
 <script>
@@ -132,11 +124,20 @@ const CATS = [
 ];
 const DAYS_SHORT = ['Mo','Di','Mi','Do','Fr','Sa','So'];
 const MAX_BOXES = 12;
-const STORAGE_KEY = 'aktivitaets_tracker_v1';
+const LS_KEY = 'aktivitaets_tracker_v1';
+
+// GitHub config — stored in localStorage so the token never appears in the repo
+const GH_OWNER = 'BoruFe511';
+const GH_REPO  = 'aktivitaets-tracker';
+const GH_FILE  = 'data.json';
+const GH_TOKEN_KEY = 'gh_pat';
 
 let state = {};
 let weekStart = getMonday(new Date());
+let syncTimer = null;
+let ghSha = null; // current SHA of data.json on GitHub
 
+// ── Helpers ──────────────────────────────────────────────────────────────────
 function getMonday(d) {
   const dt = new Date(d); dt.setHours(0,0,0,0);
   const day = dt.getDay() || 7;
@@ -146,28 +147,130 @@ function getMonday(d) {
 function addDays(d, n) { const r = new Date(d); r.setDate(r.getDate()+n); return r; }
 function fmtDate(d) { return d.toISOString().slice(0,10); }
 function todayStr() { return fmtDate(new Date()); }
-
 function fmtWeek(mon) {
   const sun = addDays(mon, 6);
   const f = dt => `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}`;
   return `${f(mon)} – ${f(sun)}`;
 }
 
-function load() {
-  try { const d = localStorage.getItem(STORAGE_KEY); if (d) state = JSON.parse(d); } catch(e) {}
+// ── Local storage ─────────────────────────────────────────────────────────────
+function localLoad() {
+  try { const d = localStorage.getItem(LS_KEY); if (d) state = JSON.parse(d); } catch(e) {}
 }
-function save() {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+function localSave() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
 }
-function getCount(cat, date) { return state[`${cat}__${date}`] || 0; }
-function setCount(cat, date, n) { state[`${cat}__${date}`] = n; save(); }
+function getToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
+function saveToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); }
 
+function getCount(cat, date) { return state[`${cat}__${date}`] || 0; }
+function setCount(cat, date, n) {
+  state[`${cat}__${date}`] = n;
+  localSave();
+  scheduleSyncUp();
+}
+
+// ── Sync status UI ────────────────────────────────────────────────────────────
+function setSyncStatus(status, msg) {
+  const dot = document.getElementById('sync-dot');
+  const bar = document.getElementById('sync-bar');
+  dot.className = 'sync-dot ' + (status || '');
+  bar.textContent = msg || '';
+}
+
+// ── GitHub API ────────────────────────────────────────────────────────────────
+const API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+
+async function ghGet() {
+  const token = getToken();
+  if (!token) return null;
+  const r = await fetch(API, {
+    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+  });
+  if (r.status === 404) return { notFound: true };
+  if (!r.ok) throw new Error(`GitHub GET ${r.status}`);
+  const json = await r.json();
+  ghSha = json.sha;
+  return JSON.parse(atob(json.content.replace(/\n/g,'')));
+}
+
+async function ghPut(data) {
+  const token = getToken();
+  if (!token) return;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
+  const body = { message: 'update tracker data', content };
+  if (ghSha) body.sha = ghSha;
+  const r = await fetch(API, {
+    method: 'PUT',
+    headers: {
+      Authorization: `token ${token}`,
+      Accept: 'application/vnd.github.v3+json',
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(body)
+  });
+  if (!r.ok) {
+    const err = await r.json().catch(() => ({}));
+    throw new Error(err.message || `GitHub PUT ${r.status}`);
+  }
+  const json = await r.json();
+  ghSha = json.content.sha;
+}
+
+// ── Sync down (on load) ───────────────────────────────────────────────────────
+async function syncDown() {
+  if (!getToken()) return;
+  setSyncStatus('syncing', 'Lade Daten …');
+  try {
+    const remote = await ghGet();
+    if (remote && !remote.notFound) {
+      // Merge: remote wins for keys not locally modified since last sync
+      state = Object.assign({}, remote, state);
+      // Simpler: just use remote as truth on load, local edits will overwrite
+      state = remote;
+      localSave();
+      render();
+    }
+    setSyncStatus('ok', 'Synchronisiert ' + new Date().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'}));
+  } catch(e) {
+    setSyncStatus('err', 'Sync fehlgeschlagen: ' + e.message);
+  }
+}
+
+// ── Sync up (debounced after edit) ────────────────────────────────────────────
+function scheduleSyncUp() {
+  clearTimeout(syncTimer);
+  setSyncStatus('syncing', 'Speichere …');
+  syncTimer = setTimeout(async () => {
+    try {
+      // Refresh SHA first to avoid conflicts
+      if (!ghSha) await ghGet();
+      await ghPut(state);
+      setSyncStatus('ok', 'Gespeichert ' + new Date().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'}));
+    } catch(e) {
+      if (e.message.includes('conflict') || e.message.includes('422')) {
+        // SHA mismatch: pull latest then retry
+        try {
+          const remote = await ghGet();
+          if (remote && !remote.notFound) state = Object.assign({}, remote, state);
+          await ghPut(state);
+          setSyncStatus('ok', 'Gespeichert (nach Konflikt)');
+        } catch(e2) {
+          setSyncStatus('err', 'Fehler: ' + e2.message);
+        }
+      } else {
+        setSyncStatus('err', 'Fehler: ' + e.message);
+      }
+    }
+  }, 1200);
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
 function render() {
   const today = todayStr();
   const days = Array.from({length:7}, (_,i) => fmtDate(addDays(weekStart,i)));
   document.getElementById('week-str').textContent = fmtWeek(weekStart);
 
-  // Summary
   const sumEl = document.getElementById('summary');
   let totalAll = 0;
   sumEl.innerHTML = CATS.map(c => {
@@ -180,19 +283,17 @@ function render() {
     </div>`;
   }).join('');
 
-  // Days grid
   const grid = document.getElementById('days-grid');
   grid.innerHTML = days.map((d, di) => {
     const isToday = d === today;
     const ddStr = d.slice(8) + '.' + d.slice(5,7);
-    let catCols = CATS.map(c => {
+    const catCols = CATS.map(c => {
       const count = getCount(c.key, d);
       let boxes = '';
       for (let b = 0; b < MAX_BOXES; b++) {
         const filled = b < count;
-        const bg = filled ? c.color : '';
-        const border = filled ? 'border-color:transparent' : '';
-        boxes += `<div class="box" data-cat="${c.key}" data-date="${d}" data-idx="${b}" style="${bg?'background:'+bg+';':''} ${border}"></div>`;
+        boxes += `<div class="box" data-cat="${c.key}" data-date="${d}" data-idx="${b}"
+          style="${filled ? 'background:'+c.color+';border-color:transparent' : ''}"></div>`;
       }
       return `<div class="cat-section">${boxes}</div>`;
     }).join('<div class="cat-divider"></div>');
@@ -200,16 +301,13 @@ function render() {
     return `<div class="day-col${isToday?' today':''}">
       <div class="day-hdr${isToday?' today':''}">
         ${DAYS_SHORT[di]}<span class="day-date">${ddStr}</span>
-      </div>
-      ${catCols}
+      </div>${catCols}
     </div>`;
   }).join('');
 
-  // Total
-  let mins = totalAll * 10;
+  const mins = totalAll * 10;
   document.getElementById('total-val').textContent = `${Math.floor(mins/60)}h ${mins%60}min`;
 
-  // Listeners
   grid.querySelectorAll('.box').forEach(box => {
     box.addEventListener('click', () => {
       const {cat, date, idx} = box.dataset;
@@ -221,12 +319,28 @@ function render() {
   });
 }
 
-load();
+// ── Token setup ───────────────────────────────────────────────────────────────
+function checkToken() {
+  if (!getToken()) {
+    const t = prompt('GitHub Personal Access Token eingeben (wird nur lokal gespeichert):');
+    if (t && t.trim()) saveToken(t.trim());
+  }
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+localLoad();
 render();
+checkToken();
+syncDown();
+
 document.getElementById('prev').onclick = () => { weekStart = addDays(weekStart,-7); render(); };
 document.getElementById('next').onclick = () => { weekStart = addDays(weekStart,7); render(); };
 
-// Service Worker Registration
+// Sync down when tab becomes visible again (e.g. switching from phone to laptop)
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) syncDown();
+});
+
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
