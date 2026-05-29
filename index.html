@@ -47,8 +47,8 @@
       border-bottom: 0.5px solid var(--border);
     }
     .header-left { display: flex; flex-direction: column; gap: 1px; }
-    .logo { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
-    .today-label { font-size: 15px; font-weight: 500; color: var(--text); }
+    .logo { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+    .today-label { font-size: 17px; font-weight: 500; color: var(--text); }
     .header-right { display: flex; align-items: center; gap: 10px; }
 
     /* Sync dot */
@@ -76,8 +76,8 @@
 
     /* ── Daily totals bar ── */
     .daily-total { padding: 1rem 1rem 0.75rem; display: flex; align-items: baseline; gap: 8px; }
-    .daily-total-label { font-size: 13px; color: var(--text2); }
-    .daily-total-val { font-size: 18px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--text); }
+    .daily-total-label { font-size: 15px; color: var(--text2); }
+    .daily-total-val { font-size: 21px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--text); }
 
     /* ── Category grid ── */
     .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 0 1rem; gap: 8px; }
@@ -90,8 +90,8 @@
       text-align: center;
       margin-bottom: 0;
     }
-    .cat-name { font-size: 11px; font-weight: 500; letter-spacing: 0.03em; line-height: 1.2; }
-    .cat-time { font-size: 10px; margin-top: 3px; opacity: 0.8; font-family: 'DM Mono', monospace; }
+    .cat-name { font-size: 13px; font-weight: 500; letter-spacing: 0.03em; line-height: 1.2; }
+    .cat-time { font-size: 11px; margin-top: 3px; opacity: 0.8; font-family: 'DM Mono', monospace; }
 
     /* Box grid: 3 columns per category */
     .box-grid {
@@ -268,8 +268,21 @@ function localLoad() { try { const d = localStorage.getItem(LS_KEY); if (d) stat
 function localSave() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} }
 function getToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
 function saveToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); }
-function getCount(cat, date) { return state[`${cat}__${date}`] || 0; }
-function setCount(cat, date, n) { state[`${cat}__${date}`] = n; localSave(); scheduleSyncUp(); }
+function getBoxKey(cat, date) { return `${cat}__${date}`; }
+function getBoxes(cat, date) {
+  const v = state[getBoxKey(cat, date)];
+  if (!v) return new Set();
+  if (Array.isArray(v)) return new Set(v);
+  // legacy: count integer → fill first N
+  if (typeof v === 'number') return new Set(Array.from({length: v}, (_,i) => i));
+  return new Set();
+}
+function setBoxes(cat, date, set) {
+  state[getBoxKey(cat, date)] = Array.from(set);
+  localSave();
+  scheduleSyncUp();
+}
+function getCount(cat, date) { return getBoxes(cat, date).size; }
 
 // ── Sync UI ───────────────────────────────────────────────────────────────────
 function setSyncStatus(status, msg) {
@@ -342,13 +355,13 @@ function renderToday() {
 
   const grid = document.getElementById('cat-grid');
   grid.innerHTML = CATS.map(c => {
-    const count = getCount(c.key, today);
-    const mins = count * 10;
+    const boxes = getBoxes(c.key, today);
+    const mins = boxes.size * 10;
 
-    let boxes = '';
+    let boxHtml = '';
     for (let b = 0; b < MAX_BOXES; b++) {
-      const filled = b < count;
-      boxes += `<div class="box" data-cat="${c.key}" data-date="${today}" data-idx="${b}"
+      const filled = boxes.has(b);
+      boxHtml += `<div class="box" data-cat="${c.key}" data-date="${today}" data-idx="${b}"
         style="${filled ? 'background:'+c.boxColor+';border-color:'+c.boxColor+'88' : ''}"></div>`;
     }
 
@@ -357,16 +370,17 @@ function renderToday() {
         <div class="cat-name" style="color:${c.textColor}">${c.label}</div>
         <div class="cat-time" style="color:${c.textColor}">${minsToStr(mins)}</div>
       </div>
-      <div class="box-grid">${boxes}</div>
+      <div class="box-grid">${boxHtml}</div>
     </div>`;
   }).join('');
 
   grid.querySelectorAll('.box').forEach(box => {
     box.addEventListener('click', () => {
       const {cat, date, idx} = box.dataset;
+      const set = getBoxes(cat, date);
       const i = parseInt(idx);
-      const cur = getCount(cat, date);
-      setCount(cat, date, i === cur-1 ? cur-1 : i+1);
+      if (set.has(i)) set.delete(i); else set.add(i);
+      setBoxes(cat, date, set);
       renderToday();
     });
   });
