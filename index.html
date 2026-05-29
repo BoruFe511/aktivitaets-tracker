@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#1a1a2e" />
+  <meta name="theme-color" content="#0a0a12" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Aktivität" />
@@ -13,120 +13,224 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
   <style>
     :root {
-      --bg: #0f0f1a;
-      --surface: #1a1a2e;
-      --surface2: #22223b;
-      --border: rgba(255,255,255,0.08);
-      --border2: rgba(255,255,255,0.14);
-      --text: #f0eefc;
-      --text2: rgba(240,238,252,0.55);
-      --text3: rgba(240,238,252,0.3);
-      --studium:  #7f6ff5;
-      --ehrenamt: #34d399;
-      --sport:    #fb923c;
-      --haushalt: #94a3b8;
+      --bg: #0a0a12;
+      --surface: #13131f;
+      --surface2: #1c1c2e;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --text: #eeeaf8;
+      --text2: rgba(238,234,248,0.5);
+      --text3: rgba(238,234,248,0.28);
+
+      --c-studium:  #0D1F2D;
+      --c-ehrenamt: #4A90E2;
+      --c-sport:    #E6CCB2;
+      --c-haushalt: #F4A261;
+
+      --box-studium:  #1a3a54;
+      --box-ehrenamt: #4A90E2;
+      --box-sport:    #c9a882;
+      --box-haushalt: #F4A261;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; }
-    .app { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 5rem; }
+    html, body { height: 100%; background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; overflow-x: hidden; }
 
-    .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.75rem; }
-    .logo { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text3); letter-spacing: 0.08em; text-transform: uppercase; }
+    /* ── Pages ── */
+    .page { display: none; max-width: 680px; margin: 0 auto; padding: 0 0 5rem; }
+    .page.active { display: block; }
+
+    /* ── Header ── */
+    .header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1.25rem 1rem 1rem;
+      position: sticky; top: 0; background: var(--bg); z-index: 10;
+      border-bottom: 0.5px solid var(--border);
+    }
+    .header-left { display: flex; flex-direction: column; gap: 1px; }
+    .logo { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+    .today-label { font-size: 15px; font-weight: 500; color: var(--text); }
     .header-right { display: flex; align-items: center; gap: 10px; }
-    .week-nav { display: flex; align-items: center; gap: 8px; }
-    .nav-btn { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; color: var(--text2); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: background 0.15s, color 0.15s; }
-    .nav-btn:hover { background: var(--surface2); color: var(--text); }
-    .week-str { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; min-width: 130px; text-align: center; }
 
-    /* Sync indicator */
+    /* Sync dot */
     .sync-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text3); transition: background 0.3s; flex-shrink: 0; }
     .sync-dot.syncing { background: #fb923c; animation: pulse 0.8s infinite; }
     .sync-dot.ok { background: #34d399; }
     .sync-dot.err { background: #f87171; }
-    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.3; } }
+    @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
 
-    .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.5rem; }
+    /* Burger */
+    .burger { background: none; border: 0.5px solid var(--border2); border-radius: 8px; color: var(--text2); width: 36px; height: 36px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; padding: 0; transition: background 0.15s; }
+    .burger:hover { background: var(--surface2); }
+    .burger span { display: block; width: 16px; height: 1.5px; background: currentColor; border-radius: 2px; }
+
+    /* ── Drawer menu ── */
+    .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 100; opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+    .drawer-overlay.open { opacity: 1; pointer-events: all; }
+    .drawer { position: fixed; top: 0; right: -280px; width: 260px; height: 100%; background: var(--surface); border-left: 0.5px solid var(--border2); z-index: 101; transition: right 0.25s cubic-bezier(.4,0,.2,1); padding: 1.5rem 1.25rem; display: flex; flex-direction: column; gap: 4px; }
+    .drawer.open { right: 0; }
+    .drawer-title { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; font-family: 'DM Mono', monospace; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 0.5px solid var(--border); }
+    .drawer-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--text2); transition: background 0.12s, color 0.12s; border: none; background: none; width: 100%; text-align: left; }
+    .drawer-item:hover { background: var(--surface2); color: var(--text); }
+    .drawer-item.active-page { color: var(--text); background: var(--surface2); }
+    .drawer-item .di-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    /* ── Daily totals bar ── */
+    .daily-total { padding: 1rem 1rem 0.75rem; display: flex; align-items: baseline; gap: 8px; }
+    .daily-total-label { font-size: 13px; color: var(--text2); }
+    .daily-total-val { font-size: 18px; font-weight: 500; font-family: 'DM Mono', monospace; color: var(--text); }
+
+    /* ── Category grid ── */
+    .cat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 0 1rem; gap: 8px; }
+
+    .cat-col { display: flex; flex-direction: column; gap: 0; }
+
+    .cat-header {
+      border-radius: 8px 8px 0 0;
+      padding: 8px 6px 6px;
+      text-align: center;
+      margin-bottom: 0;
+    }
+    .cat-name { font-size: 11px; font-weight: 500; letter-spacing: 0.03em; line-height: 1.2; }
+    .cat-time { font-size: 10px; margin-top: 3px; opacity: 0.8; font-family: 'DM Mono', monospace; }
+
+    /* Box grid: 3 columns per category */
+    .box-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3px;
+      background: var(--surface);
+      border: 0.5px solid var(--border2);
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 5px;
+    }
+
+    .box {
+      aspect-ratio: 1;
+      border-radius: 3px;
+      border: 0.5px solid var(--border2);
+      background: var(--surface2);
+      cursor: pointer;
+      transition: background 0.08s, border-color 0.08s, transform 0.07s;
+    }
+    .box:active { transform: scale(0.84); }
+
+    .sync-bar { font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; margin-left: auto; white-space: nowrap; }
+
+    /* ── OLD weekly view (page-alt) ── */
+    .page-alt-inner { padding: 1rem; }
+    .week-nav { display: flex; align-items: center; gap: 8px; margin-bottom: 1.25rem; }
+    .nav-btn { background: var(--surface); border: 0.5px solid var(--border2); border-radius: 8px; color: var(--text2); width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; transition: background 0.15s; }
+    .nav-btn:hover { background: var(--surface2); color: var(--text); }
+    .week-str { font-size: 13px; color: var(--text2); font-family: 'DM Mono', monospace; min-width: 130px; text-align: center; }
+    .summary-old { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 1.25rem; }
     .sum-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 10px 10px 8px; }
     .sum-dot { width: 6px; height: 6px; border-radius: 50%; margin-bottom: 6px; }
-    .sum-val { font-size: 22px; font-family: 'DM Mono', monospace; font-weight: 500; line-height: 1; }
+    .sum-val { font-size: 20px; font-family: 'DM Mono', monospace; font-weight: 500; line-height: 1; }
     .sum-lbl { font-size: 10px; color: var(--text3); margin-top: 3px; letter-spacing: 0.04em; text-transform: uppercase; }
-
-    .days-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 1rem; }
-    .day-col { display: flex; flex-direction: column; gap: 4px; }
-    .day-hdr { text-align: center; font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; padding-bottom: 4px; }
-    .day-hdr.today { color: var(--text); }
-    .day-date { font-size: 9px; color: var(--text3); display: block; }
-    .day-hdr.today .day-date { color: var(--text2); }
-    .cat-section { display: flex; flex-direction: column; gap: 2px; }
-    .box {
-      width: 18px; height: 18px; border-radius: 3px;
-      border: 0.5px solid var(--border2);
-      background: var(--surface);
-      cursor: pointer;
-      transition: background 0.1s, border-color 0.1s, transform 0.08s;
-      flex-shrink: 0;
-    }
-    .box:active { transform: scale(0.88); }
-    @media (max-width: 400px) { .box { width: 14px; height: 14px; } }
-    .cat-divider { height: 4px; }
-
-    .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem; }
-    .leg-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text2); }
-    .leg-dot { width: 8px; height: 8px; border-radius: 2px; }
-
+    .days-grid-old { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-bottom: 1rem; }
+    .day-col-old { display: flex; flex-direction: column; gap: 3px; }
+    .day-hdr-old { text-align: center; font-size: 10px; color: var(--text3); font-family: 'DM Mono', monospace; padding-bottom: 3px; }
+    .day-hdr-old.today { color: var(--text); }
+    .day-date-old { font-size: 9px; color: var(--text3); display: block; }
+    .cat-section-old { display: flex; flex-direction: column; gap: 2px; }
+    .box-old { width: 16px; height: 16px; border-radius: 3px; border: 0.5px solid var(--border2); background: var(--surface); cursor: pointer; transition: background 0.1s, transform 0.07s; flex-shrink: 0; }
+    .box-old:active { transform: scale(0.85); }
+    .cat-div-old { height: 3px; }
     .total-bar { background: var(--surface); border: 0.5px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; }
     .total-lbl { font-size: 12px; color: var(--text2); }
     .total-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; }
-    .day-col.today { background: rgba(255,255,255,0.03); border-radius: 8px; padding: 0 2px; margin: 0 -2px; }
-
-    /* Sync status bar */
-    .sync-bar { font-size: 11px; color: var(--text3); text-align: right; margin-top: 10px; font-family: 'DM Mono', monospace; min-height: 16px; }
+    .day-col-old.today { background: rgba(255,255,255,0.03); border-radius: 6px; }
+    .legend-old { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 1rem; }
+    .leg-item { display: flex; align-items: center; gap: 5px; font-size: 12px; color: var(--text2); }
+    .leg-dot { width: 7px; height: 7px; border-radius: 2px; }
   </style>
 </head>
 <body>
-<div class="app">
+
+<!-- ══ PAGE: TODAY ══ -->
+<div class="page active" id="page-today">
   <div class="header">
-    <div class="logo">Aktivität</div>
+    <div class="header-left">
+      <span class="logo">Aktivität</span>
+      <span class="today-label" id="today-label"></span>
+    </div>
     <div class="header-right">
-      <div class="sync-dot" id="sync-dot" title="Sync-Status"></div>
-      <div class="week-nav">
-        <button class="nav-btn" id="prev">&#8592;</button>
-        <div class="week-str" id="week-str"></div>
-        <button class="nav-btn" id="next">&#8594;</button>
-      </div>
+      <div class="sync-dot" id="sync-dot"></div>
+      <button class="burger" id="burger-btn" aria-label="Menü öffnen">
+        <span></span><span></span><span></span>
+      </button>
     </div>
   </div>
 
-  <div class="summary" id="summary"></div>
-
-  <div class="legend">
-    <div class="leg-item"><div class="leg-dot" style="background:var(--studium)"></div>Studium</div>
-    <div class="leg-item"><div class="leg-dot" style="background:var(--ehrenamt)"></div>Ehrenamt</div>
-    <div class="leg-item"><div class="leg-dot" style="background:var(--sport)"></div>Sport</div>
-    <div class="leg-item"><div class="leg-dot" style="background:var(--haushalt)"></div>Haushalt</div>
+  <div class="daily-total">
+    <span class="daily-total-label">Tagesaktivität</span>
+    <span class="daily-total-val" id="daily-total-val">0h 0min</span>
+    <span class="sync-bar" id="sync-bar"></span>
   </div>
 
-  <div class="days-grid" id="days-grid"></div>
+  <div class="cat-grid" id="cat-grid"></div>
+</div>
 
-  <div class="total-bar">
-    <span class="total-lbl">Woche gesamt</span>
-    <span class="total-val" id="total-val"></span>
+<!-- ══ PAGE: ALT (Wochenansicht) ══ -->
+<div class="page" id="page-alt">
+  <div class="header">
+    <div class="header-left">
+      <span class="logo">Aktivität</span>
+      <span class="today-label">Wochenansicht</span>
+    </div>
+    <div class="header-right">
+      <div class="sync-dot" id="sync-dot-alt"></div>
+      <button class="burger" id="burger-btn-alt" aria-label="Menü öffnen">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </div>
-  <div class="sync-bar" id="sync-bar"></div>
+  <div class="page-alt-inner">
+    <div class="week-nav">
+      <button class="nav-btn" id="prev">&#8592;</button>
+      <div class="week-str" id="week-str"></div>
+      <button class="nav-btn" id="next">&#8594;</button>
+    </div>
+    <div class="summary-old" id="summary-old"></div>
+    <div class="legend-old">
+      <div class="leg-item"><div class="leg-dot" style="background:#4A90E2"></div>Studium</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#4A90E2"></div>Ehrenamt</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#c9a882"></div>Sport</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#F4A261"></div>Haushalt</div>
+    </div>
+    <div class="days-grid-old" id="days-grid-old"></div>
+    <div class="total-bar">
+      <span class="total-lbl">Woche gesamt</span>
+      <span class="total-val" id="total-val-old"></span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Drawer ══ -->
+<div class="drawer-overlay" id="drawer-overlay"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-title">Navigation</div>
+  <button class="drawer-item active-page" data-page="page-today">
+    <span class="di-icon">☀</span> Heute
+  </button>
+  <button class="drawer-item" data-page="page-alt">
+    <span class="di-icon">📅</span> Wochenansicht (alt)
+  </button>
 </div>
 
 <script>
+// ── Config ────────────────────────────────────────────────────────────────────
 const CATS = [
-  { key: 'studium',  label: 'Studium',  color: '#7f6ff5' },
-  { key: 'ehrenamt', label: 'Ehrenamt', color: '#34d399' },
-  { key: 'sport',    label: 'Sport',    color: '#fb923c' },
-  { key: 'haushalt', label: 'Haushalt', color: '#94a3b8' },
+  { key: 'studium',  label: 'Studium',  color: '#0D1F2D', boxColor: '#1a3a54',  textColor: '#7ab3d4' },
+  { key: 'ehrenamt', label: 'Ehrenamt', color: '#1a3060', boxColor: '#4A90E2',  textColor: '#93c0f5' },
+  { key: 'sport',    label: 'Sport',    color: '#3d2e1a', boxColor: '#c9a882',  textColor: '#E6CCB2' },
+  { key: 'haushalt', label: 'Haushalt', color: '#3d1f08', boxColor: '#F4A261',  textColor: '#f9c49a' },
 ];
 const DAYS_SHORT = ['Mo','Di','Mi','Do','Fr','Sa','So'];
-const MAX_BOXES = 12;
+const MAX_BOXES  = 20 * 3; // 20 rows × 3 cols = 60 boxes per category
+const MAX_BOXES_OLD = 12;
 const LS_KEY = 'aktivitaets_tracker_v1';
-
-// GitHub config — stored in localStorage so the token never appears in the repo
 const GH_OWNER = 'BoruFe511';
 const GH_REPO  = 'aktivitaets-tracker';
 const GH_FILE  = 'data.json';
@@ -135,9 +239,10 @@ const GH_TOKEN_KEY = 'gh_pat';
 let state = {};
 let weekStart = getMonday(new Date());
 let syncTimer = null;
-let ghSha = null; // current SHA of data.json on GitHub
+let ghSha = null;
+let currentPage = 'page-today';
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
+// ── Helpers ───────────────────────────────────────────────────────────────────
 function getMonday(d) {
   const dt = new Date(d); dt.setHours(0,0,0,0);
   const day = dt.getDay() || 7;
@@ -152,128 +257,136 @@ function fmtWeek(mon) {
   const f = dt => `${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}`;
   return `${f(mon)} – ${f(sun)}`;
 }
+function minsToStr(m) { return `${Math.floor(m/60)}h ${m%60}min`; }
 
-// ── Local storage ─────────────────────────────────────────────────────────────
-function localLoad() {
-  try { const d = localStorage.getItem(LS_KEY); if (d) state = JSON.parse(d); } catch(e) {}
+function fmtTodayLabel() {
+  return new Date().toLocaleDateString('de-DE', {weekday:'long', day:'numeric', month:'long'});
 }
-function localSave() {
-  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
-}
+
+// ── Storage ───────────────────────────────────────────────────────────────────
+function localLoad() { try { const d = localStorage.getItem(LS_KEY); if (d) state = JSON.parse(d); } catch(e){} }
+function localSave() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e){} }
 function getToken() { return localStorage.getItem(GH_TOKEN_KEY) || ''; }
 function saveToken(t) { localStorage.setItem(GH_TOKEN_KEY, t); }
-
 function getCount(cat, date) { return state[`${cat}__${date}`] || 0; }
-function setCount(cat, date, n) {
-  state[`${cat}__${date}`] = n;
-  localSave();
-  scheduleSyncUp();
-}
+function setCount(cat, date, n) { state[`${cat}__${date}`] = n; localSave(); scheduleSyncUp(); }
 
-// ── Sync status UI ────────────────────────────────────────────────────────────
+// ── Sync UI ───────────────────────────────────────────────────────────────────
 function setSyncStatus(status, msg) {
-  const dot = document.getElementById('sync-dot');
+  ['sync-dot','sync-dot-alt'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.className = 'sync-dot ' + (status||'');
+  });
   const bar = document.getElementById('sync-bar');
-  dot.className = 'sync-dot ' + (status || '');
-  bar.textContent = msg || '';
+  if (bar) bar.textContent = msg || '';
 }
 
-// ── GitHub API ────────────────────────────────────────────────────────────────
+// ── GitHub ────────────────────────────────────────────────────────────────────
 const API = `https://gh-proxy.felix-poit.workers.dev/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
 
 async function ghGet() {
-  const token = getToken();
-  if (!token) return null;
-  const r = await fetch(API, {
-    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
-  });
+  const token = getToken(); if (!token) return null;
+  const r = await fetch(API, { headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' } });
   if (r.status === 404) return { notFound: true };
   if (!r.ok) throw new Error(`GitHub GET ${r.status}`);
   const json = await r.json();
   ghSha = json.sha;
   return JSON.parse(atob(json.content.replace(/\n/g,'')));
 }
-
 async function ghPut(data) {
-  const token = getToken();
-  if (!token) return;
+  const token = getToken(); if (!token) return;
   const content = btoa(unescape(encodeURIComponent(JSON.stringify(data, null, 2))));
   const body = { message: 'update tracker data', content };
   if (ghSha) body.sha = ghSha;
-  const r = await fetch(API, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${token}`,
-      Accept: 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(body)
-  });
-  if (!r.ok) {
-    const err = await r.json().catch(() => ({}));
-    throw new Error(err.message || `GitHub PUT ${r.status}`);
-  }
+  const r = await fetch(API, { method: 'PUT', headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json', 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  if (!r.ok) { const err = await r.json().catch(()=>({})); throw new Error(err.message || `GitHub PUT ${r.status}`); }
   const json = await r.json();
   ghSha = json.content.sha;
 }
 
-// ── Sync down (on load) ───────────────────────────────────────────────────────
 async function syncDown() {
   if (!getToken()) return;
   setSyncStatus('syncing', 'Lade Daten …');
   try {
     const remote = await ghGet();
-    if (remote && !remote.notFound) {
-      // Merge: remote wins for keys not locally modified since last sync
-      state = Object.assign({}, remote, state);
-      // Simpler: just use remote as truth on load, local edits will overwrite
-      state = remote;
-      localSave();
-      render();
-    }
-    setSyncStatus('ok', 'Synchronisiert ' + new Date().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'}));
-  } catch(e) {
-    setSyncStatus('err', 'Sync fehlgeschlagen: ' + e.message);
-  }
+    if (remote && !remote.notFound) { state = remote; localSave(); renderToday(); renderAlt(); }
+    setSyncStatus('ok', 'Synchronisiert ' + new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
+  } catch(e) { setSyncStatus('err', 'Sync fehlgeschlagen: ' + e.message); }
 }
 
-// ── Sync up (debounced after edit) ────────────────────────────────────────────
 function scheduleSyncUp() {
   clearTimeout(syncTimer);
   setSyncStatus('syncing', 'Speichere …');
   syncTimer = setTimeout(async () => {
     try {
-      // Refresh SHA first to avoid conflicts
       if (!ghSha) await ghGet();
       await ghPut(state);
-      setSyncStatus('ok', 'Gespeichert ' + new Date().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'}));
+      setSyncStatus('ok', 'Gespeichert ' + new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}));
     } catch(e) {
       if (e.message.includes('conflict') || e.message.includes('422')) {
-        // SHA mismatch: pull latest then retry
-        try {
-          const remote = await ghGet();
-          if (remote && !remote.notFound) state = Object.assign({}, remote, state);
-          await ghPut(state);
-          setSyncStatus('ok', 'Gespeichert (nach Konflikt)');
-        } catch(e2) {
-          setSyncStatus('err', 'Fehler: ' + e2.message);
-        }
-      } else {
-        setSyncStatus('err', 'Fehler: ' + e.message);
-      }
+        try { const remote = await ghGet(); if (remote && !remote.notFound) state = Object.assign({}, remote, state); await ghPut(state); setSyncStatus('ok', 'Gespeichert'); }
+        catch(e2) { setSyncStatus('err', 'Fehler: ' + e2.message); }
+      } else { setSyncStatus('err', 'Fehler: ' + e.message); }
     }
   }, 1200);
 }
 
-// ── Render ────────────────────────────────────────────────────────────────────
-function render() {
+// ── Render TODAY ──────────────────────────────────────────────────────────────
+function renderToday() {
+  const today = todayStr();
+  document.getElementById('today-label').textContent = fmtTodayLabel();
+
+  let totalMins = 0;
+  CATS.forEach(c => { totalMins += getCount(c.key, today) * 10; });
+  document.getElementById('daily-total-val').textContent = minsToStr(totalMins);
+
+  const grid = document.getElementById('cat-grid');
+  grid.innerHTML = CATS.map(c => {
+    const count = getCount(c.key, today);
+    const mins = count * 10;
+
+    let boxes = '';
+    for (let b = 0; b < MAX_BOXES; b++) {
+      const filled = b < count;
+      boxes += `<div class="box" data-cat="${c.key}" data-date="${today}" data-idx="${b}"
+        style="${filled ? 'background:'+c.boxColor+';border-color:'+c.boxColor+'88' : ''}"></div>`;
+    }
+
+    return `<div class="cat-col">
+      <div class="cat-header" style="background:${c.color}">
+        <div class="cat-name" style="color:${c.textColor}">${c.label}</div>
+        <div class="cat-time" style="color:${c.textColor}">${minsToStr(mins)}</div>
+      </div>
+      <div class="box-grid">${boxes}</div>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.box').forEach(box => {
+    box.addEventListener('click', () => {
+      const {cat, date, idx} = box.dataset;
+      const i = parseInt(idx);
+      const cur = getCount(cat, date);
+      setCount(cat, date, i === cur-1 ? cur-1 : i+1);
+      renderToday();
+    });
+  });
+}
+
+// ── Render ALT (weekly) ───────────────────────────────────────────────────────
+const CATS_OLD = [
+  { key: 'studium',  label: 'Studium',  color: '#4A90E2' },
+  { key: 'ehrenamt', label: 'Ehrenamt', color: '#4A90E2' },
+  { key: 'sport',    label: 'Sport',    color: '#c9a882' },
+  { key: 'haushalt', label: 'Haushalt', color: '#F4A261' },
+];
+
+function renderAlt() {
   const today = todayStr();
   const days = Array.from({length:7}, (_,i) => fmtDate(addDays(weekStart,i)));
   document.getElementById('week-str').textContent = fmtWeek(weekStart);
 
-  const sumEl = document.getElementById('summary');
   let totalAll = 0;
-  sumEl.innerHTML = CATS.map(c => {
+  document.getElementById('summary-old').innerHTML = CATS_OLD.map(c => {
     const t = days.reduce((s,d) => s + getCount(c.key,d), 0);
     totalAll += t;
     return `<div class="sum-card">
@@ -283,43 +396,73 @@ function render() {
     </div>`;
   }).join('');
 
-  const grid = document.getElementById('days-grid');
+  const grid = document.getElementById('days-grid-old');
   grid.innerHTML = days.map((d, di) => {
     const isToday = d === today;
-    const ddStr = d.slice(8) + '.' + d.slice(5,7);
-    const catCols = CATS.map(c => {
+    const ddStr = d.slice(8)+'.'+d.slice(5,7);
+    const catCols = CATS_OLD.map(c => {
       const count = getCount(c.key, d);
       let boxes = '';
-      for (let b = 0; b < MAX_BOXES; b++) {
+      for (let b = 0; b < MAX_BOXES_OLD; b++) {
         const filled = b < count;
-        boxes += `<div class="box" data-cat="${c.key}" data-date="${d}" data-idx="${b}"
+        boxes += `<div class="box-old" data-cat="${c.key}" data-date="${d}" data-idx="${b}"
           style="${filled ? 'background:'+c.color+';border-color:transparent' : ''}"></div>`;
       }
-      return `<div class="cat-section">${boxes}</div>`;
-    }).join('<div class="cat-divider"></div>');
+      return `<div class="cat-section-old">${boxes}</div>`;
+    }).join('<div class="cat-div-old"></div>');
 
-    return `<div class="day-col${isToday?' today':''}">
-      <div class="day-hdr${isToday?' today':''}">
-        ${DAYS_SHORT[di]}<span class="day-date">${ddStr}</span>
+    return `<div class="day-col-old${isToday?' today':''}">
+      <div class="day-hdr-old${isToday?' today':''}">
+        ${DAYS_SHORT[di]}<span class="day-date-old">${ddStr}</span>
       </div>${catCols}
     </div>`;
   }).join('');
 
-  const mins = totalAll * 10;
-  document.getElementById('total-val').textContent = `${Math.floor(mins/60)}h ${mins%60}min`;
+  document.getElementById('total-val-old').textContent = minsToStr(totalAll * 10);
 
-  grid.querySelectorAll('.box').forEach(box => {
+  grid.querySelectorAll('.box-old').forEach(box => {
     box.addEventListener('click', () => {
       const {cat, date, idx} = box.dataset;
       const i = parseInt(idx);
       const cur = getCount(cat, date);
       setCount(cat, date, i === cur-1 ? cur-1 : i+1);
-      render();
+      renderAlt();
     });
   });
 }
 
-// ── Token setup ───────────────────────────────────────────────────────────────
+// ── Navigation ────────────────────────────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.querySelectorAll('.drawer-item').forEach(btn => {
+    btn.classList.toggle('active-page', btn.dataset.page === id);
+  });
+  currentPage = id;
+  closeDrawer();
+  if (id === 'page-alt') renderAlt();
+}
+
+function openDrawer() {
+  document.getElementById('drawer').classList.add('open');
+  document.getElementById('drawer-overlay').classList.add('open');
+}
+function closeDrawer() {
+  document.getElementById('drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+document.getElementById('burger-btn').onclick = openDrawer;
+document.getElementById('burger-btn-alt').onclick = openDrawer;
+document.getElementById('drawer-overlay').onclick = closeDrawer;
+document.querySelectorAll('.drawer-item').forEach(btn => {
+  btn.onclick = () => showPage(btn.dataset.page);
+});
+
+document.getElementById('prev').onclick = () => { weekStart = addDays(weekStart,-7); renderAlt(); };
+document.getElementById('next').onclick = () => { weekStart = addDays(weekStart,7); renderAlt(); };
+
+// ── Token ─────────────────────────────────────────────────────────────────────
 function checkToken() {
   if (!getToken()) {
     const t = prompt('GitHub Personal Access Token eingeben (wird nur lokal gespeichert):');
@@ -329,21 +472,12 @@ function checkToken() {
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 localLoad();
-render();
+renderToday();
 checkToken();
 syncDown();
 
-document.getElementById('prev').onclick = () => { weekStart = addDays(weekStart,-7); render(); };
-document.getElementById('next').onclick = () => { weekStart = addDays(weekStart,7); render(); };
-
-// Sync down when tab becomes visible again (e.g. switching from phone to laptop)
-document.addEventListener('visibilitychange', () => {
-  if (!document.hidden) syncDown();
-});
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) syncDown(); });
+if ('serviceWorker' in navigator) { navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
 </body>
 </html>
