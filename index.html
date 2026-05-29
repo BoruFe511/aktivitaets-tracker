@@ -179,7 +179,7 @@ function setSyncStatus(status, msg) {
 }
 
 // ── GitHub API ────────────────────────────────────────────────────────────────
-const API = `https://api.github.com/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
+const API = `https://gh-proxy.felix-poit.workers.dev/repos/${GH_OWNER}/${GH_REPO}/contents/${GH_FILE}`;
 
 async function ghGet() {
   const token = getToken();
