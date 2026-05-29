@@ -91,7 +91,7 @@
     .bar-track{flex:1;height:8px;background:var(--surface2);border-radius:4px;overflow:visible;position:relative;}
     .bar-fill{height:100%;border-radius:4px;transition:width 0.3s;}
     .bar-goal-line{position:absolute;top:-2px;bottom:-2px;width:1.5px;background:rgba(255,255,255,0.35);border-radius:1px;}
-    .bar-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);width:52px;text-align:right;flex-shrink:0;}
+    .bar-val{font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);width:68px;text-align:right;flex-shrink:0;white-space:nowrap;}
     .week-compare{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:12px 14px;margin:0 1rem 1rem;}
     .week-compare-title{font-size:11px;color:var(--text3);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:8px;}
     .compare-row{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;}
@@ -181,14 +181,15 @@
 <!-- WEEK -->
 <div class="page" id="page-week">
   <div class="header">
-    <div class="header-left"><span class="logo">Aktivität</span><span class="page-title">Woche</span></div>
+    <div class="header-left"><span class="logo">Aktivität</span><span class="page-title">Wochenübersicht</span></div>
     <div class="header-right"><div class="sync-dot" id="sync-dot-week"></div><button class="burger" id="burger-week" aria-label="Menü"><span></span><span></span><span></span></button></div>
   </div>
-  <div class="nav-row">
-    <button class="nav-btn" id="week-prev">&#8592;</button>
-    <span class="nav-label" id="week-range-label"></span>
+  <div style="padding:0.9rem 1rem 0.75rem;border-bottom:0.5px solid var(--border);display:flex;align-items:center;gap:6px;">
+    <button class="day-nav-btn" id="week-prev">&#8249;</button>
+    <span class="page-title" id="week-range-label" style="flex:1;font-size:15px;"></span>
+    <button class="day-nav-btn" id="week-next">&#8250;</button>
+    <button class="today-jump" id="week-jump" style="display:none">Diese Woche</button>
     <span class="chip" id="week-total-chip"></span>
-    <button class="nav-btn" id="week-next">&#8594;</button>
   </div>
   <div id="week-compare-wrap"></div>
   <div class="inner" id="week-day-list"></div>
@@ -316,13 +317,15 @@ let ghSha       = null;
 // ── Helpers ───────────────────────────────────────────────────────────────────
 function getMonday(d){const dt=new Date(d);dt.setHours(0,0,0,0);const day=dt.getDay()||7;dt.setDate(dt.getDate()-day+1);return dt;}
 function addDays(d,n){const r=new Date(d);r.setDate(r.getDate()+n);return r;}
-function fmtDate(d){return d.toISOString().slice(0,10);}
+function fmtDate(d){return`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 function todayStr(){return fmtDate(new Date());}
-function fmtWeek(mon){const sun=addDays(mon,6);const f=dt=>`${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}`;return`${f(mon)} – ${f(sun)}`;}
-function minsToStr(m){return`${Math.floor(m/60)}h ${m%60}min`;}
-function isWeekend(dateStr){const d=new Date(dateStr);return d.getDay()===0||d.getDay()===6;}
+function parseLocal(s){const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d);}
+function getISOWeek(d){const dt=new Date(d);dt.setHours(0,0,0,0);const thu=new Date(dt);thu.setDate(dt.getDate()+4-(dt.getDay()||7));const jan1=new Date(thu.getFullYear(),0,1);return Math.ceil(((thu-jan1)/86400000+1)/7);}
+function fmtWeek(mon){const sun=addDays(mon,6);const f=dt=>`${String(dt.getDate()).padStart(2,'0')}.${String(dt.getMonth()+1).padStart(2,'0')}.`;return`${f(mon)}–${f(sun)} KW ${getISOWeek(mon)}`;}
+function minsToStr(m){return`${Math.floor(m/60)}h ${m%60}min`;}
+function isWeekend(dateStr){const d=parseLocal(dateStr);return d.getDay()===0||d.getDay()===6;}
 function getGoal(cat,dateStr){const g=config.goals;const bucket=isWeekend(dateStr)?g.weekend:g.weekday;return bucket[cat]||0;}
-function getDayOfWeek(dateStr){const d=new Date(dateStr);return(d.getDay()+6)%7;}
+function getDayOfWeek(dateStr){const d=parseLocal(dateStr);return(d.getDay()+6)%7;}
 
 // ── Storage ───────────────────────────────────────────────────────────────────
 function localLoad(){
@@ -456,7 +459,10 @@ function renderToday(){
 function renderWeek(){
   const today=todayStr();
   const days=Array.from({length:7},(_,i)=>addDays(weekStartW,i));
+  const thisWeekMon=getMonday(new Date());
+  const isThisWeek=fmtDate(weekStartW)===fmtDate(thisWeekMon);
   document.getElementById('week-range-label').textContent=fmtWeek(weekStartW);
+  document.getElementById('week-jump').style.display=isThisWeek?'none':'';
   const dayTotals=days.map(d=>getDayMins(fmtDate(d)));
   const maxMins=Math.max(...dayTotals,10);
   const weekTotal=dayTotals.reduce((a,b)=>a+b,0);
@@ -849,6 +855,7 @@ document.getElementById('day-prev').onclick=()=>{viewDate=addDays(viewDate,-1);r
 document.getElementById('day-next').onclick=()=>{viewDate=addDays(viewDate,1);renderToday();};
 document.getElementById('today-jump').onclick=()=>{viewDate=new Date();renderToday();};
 document.getElementById('week-prev').onclick=()=>{weekStartW=addDays(weekStartW,-7);renderWeek();};
+document.getElementById('week-jump').onclick=()=>{weekStartW=getMonday(new Date());renderWeek();};
 document.getElementById('week-next').onclick=()=>{weekStartW=addDays(weekStartW,7);renderWeek();};
 document.getElementById('month-prev').onclick=()=>{monthView=new Date(monthView.getFullYear(),monthView.getMonth()-1,1);renderMonth();};
 document.getElementById('month-next').onclick=()=>{monthView=new Date(monthView.getFullYear(),monthView.getMonth()+1,1);renderMonth();};
